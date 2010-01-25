@@ -1,4 +1,4 @@
-require 'lib/distributed_mutex'
+require 'distributed_mutex'
 
 # Simple global variable mutex, not production quality more
 # as a test implementation for the super class.

@@ -1,1 +1,1 @@
-require 'lib/mysql_mutex.rb'
+require 'mysql_mutex'

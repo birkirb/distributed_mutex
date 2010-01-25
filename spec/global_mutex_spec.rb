@@ -1,5 +1,5 @@
 require 'spec/spec_helper'
-require 'lib/global_mutex'
+require 'global_mutex'
 
 describe GlobalMutex, 'when created with a key and timeout' do
 

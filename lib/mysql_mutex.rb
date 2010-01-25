@@ -1,5 +1,5 @@
 require 'active_record'
-require 'lib/distributed_mutex'
+require 'distributed_mutex'
 
 class MySQLMutex < DistributedMutex
 
