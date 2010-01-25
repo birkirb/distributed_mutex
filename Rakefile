@@ -131,4 +131,4 @@ rescue LoadError
   # Too bad
 end
 
-task :default => [:test]
+task :default => [:spec]
