@@ -84,6 +84,23 @@ describe GlobalMutex, 'when created with a key and timeout' do
     mutex.locked?.should == false
   end
 
+  it 'should wait until the timeout passes before giving up' do
+    mutex_locked = GlobalMutex.new('test', 1)
+    mutex_locked.lock
+
+    time_start = Time.now
+    mutex = GlobalMutex.new('test', 3)
+    mutex.lock.should == false
+    time_end = Time.now
+    (time_end - time_start + 0.003).should > 3
+
+    mutex_locked.unlock.should == true
+
+    mutex = GlobalMutex.new('test', 3)
+    mutex.lock.should == true
+    mutex.unlock.should == true
+  end
+
 end
 
 describe GlobalMutex, 'when access via a class synchronized method' do
