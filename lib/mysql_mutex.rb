@@ -14,6 +14,7 @@ class MySQLMutex < DistributedMutex
     mutex = new(key, timeout, con)
     mutex.synchronize(&block)
   end
+
   private
 
   def get_lock
