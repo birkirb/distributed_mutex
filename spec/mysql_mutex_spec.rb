@@ -42,14 +42,14 @@ describe MySQLMutex, 'with a lock on an open mysql connection' do
   it 'should work with two excluding threads' do
     thread_1 = Thread.new do
       con = ActiveRecord::Base.mysql_connection(ActiveRecord::Base.configurations['test'])
-      mutex = MySQLMutex.new('test', 1, con)
+      mutex = MySQLMutex.new('test', 1, false, con)
       $output += "1-RUN"
       $output += "-LOCK" if mutex.lock
     end
 
     thread_2 = Thread.new do
       con = ActiveRecord::Base.mysql_connection(ActiveRecord::Base.configurations['test'])
-      mutex = MySQLMutex.new('test', 1, con)
+      mutex = MySQLMutex.new('test', 1, false, con)
       $output += "-2-RUN"
       $output += "-LOCK" if mutex.lock
     end

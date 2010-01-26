@@ -3,11 +3,11 @@ require 'distributed_mutex'
 
 class MySQLMutex < DistributedMutex
 
-  def initialize(key, timeout = DEFAULT_TIMEOUT, connection = ActiveRecord::Base.connection)
+  def initialize(key, timeout = DEFAULT_TIMEOUT, exception_on_timeout = DEFAULT_EXCEPTION_ON_TIMEOUT, connection = ActiveRecord::Base.connection)
     @connection = connection
     @get_sql = ActiveRecord::Base.send(:sanitize_sql_array,["SELECT GET_LOCK(?,?)", key, timeout])
     @release_sql = ActiveRecord::Base.send(:sanitize_sql_array,["SELECT RELEASE_LOCK(?)", key])
-    super(key, timeout)
+    super(key, timeout, exception_on_timeout)
   end
 
   def self.synchronize(key, timeout = DEFAULT_TIMEOUT, con = ActiveRecord::Base.connection, &block)

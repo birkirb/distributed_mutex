@@ -1,0 +1,2 @@
+class MutexLockTimeout < StandardError
+end

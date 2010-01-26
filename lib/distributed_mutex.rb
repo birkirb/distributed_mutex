@@ -1,18 +1,30 @@
+require 'mutex_lock_timeout'
+
 class DistributedMutex < Mutex
 
   DEFAULT_TIMEOUT = 1
+  DEFAULT_EXCEPTION_ON_TIMEOUT = false
 
-  attr_reader :key, :timeout
+  attr_reader :key, :timeout, :exception_on_timeout
   alias excluse_unlock unlock
 
-  def initialize(key, timeout = DEFAULT_TIMEOUT)
+  def initialize(key, timeout = DEFAULT_TIMEOUT, exception_on_timeout = DEFAULT_EXCEPTION_ON_TIMEOUT)
     @key = key
     @timeout = timeout
     @locked = false
+    @exception_on_timeout = exception_on_timeout
   end
 
   def lock
-    @locked = get_lock
+    if @locked = get_lock
+      true
+    else
+      if @exception_on_timeout
+        raise MutexLockTimeout.new
+      else
+        false
+      end
+    end
   end
 
   def locked?
@@ -55,8 +67,8 @@ class DistributedMutex < Mutex
     end
   end
 
-  def self.synchronize(key, timeout = DEFAULT_TIMEOUT, &block)
-    mutex = new(key, timeout)
+  def self.synchronize(key, timeout = DEFAULT_TIMEOUT, exception_on_timeout = DEFAULT_EXCEPTION_ON_TIMEOUT, &block)
+    mutex = new(key, timeout, exception_on_timeout)
     mutex.synchronize(&block)
   end
 

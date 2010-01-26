@@ -101,6 +101,16 @@ describe GlobalMutex, 'when created with a key and timeout' do
     mutex.unlock.should == true
   end
 
+  it 'should throw an exception when so enabled on mutex timeout' do
+    mutex_locked = GlobalMutex.new('test', 1)
+    mutex_locked.lock
+
+    mutex = GlobalMutex.new('test', 0, true)
+    lambda { mutex.lock }.should raise_error(MutexLockTimeout)
+    mutex.locked?.should == false
+    mutex_locked.unlock.should == true
+  end
+
 end
 
 describe GlobalMutex, 'when access via a class synchronized method' do
