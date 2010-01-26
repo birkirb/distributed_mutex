@@ -106,7 +106,7 @@ describe GlobalMutex, 'when created with a key and timeout' do
     mutex_locked.lock
 
     mutex = GlobalMutex.new('test', 0, true)
-    lambda { mutex.lock }.should raise_error(MutexLockTimeout)
+    lambda { mutex.lock }.should raise_error(MutexLockTimeout, 'Mutex lock operation timed out')
     mutex.locked?.should == false
     mutex_locked.unlock.should == true
   end
