@@ -1,0 +1,25 @@
+= distributed_mutex
+
+by Birkir A. Barkarson <birkirb@stoicviking.net>
+
+== Description
+
+A rails plugin proving an abstract distributed mutex along with a MySQL implementation that uses
+mysql named locks. Others distributed locks using Memcached etc could be implemented using the same
+framework.
+
+== Installation from source
+
+  git clone git://github.com/birkirb/distributed_mutex.git
+  cd distributed_mutex
+  rake install
+
+=== Rails Plugin Installation
+
+  script/plugin install git://github.com/birkirb/distributed_mutex.git
+
+== Copyright
+
+Author::    Birkir A. Barkarson <birkirb@stoicviking.net>
+Copyright:: Copyright (c) 2009
+License::   MIT License
