@@ -40,12 +40,15 @@ describe MySQLMutex, 'with a lock on an open mysql connection' do
   end
 
   it 'should work with two excluding threads' do
+    thread_1_mutex = nil
     thread_1 = Thread.new do
       con = ActiveRecord::Base.mysql_connection(ActiveRecord::Base.configurations['test'])
-      mutex = MySQLMutex.new('test', 1, false, con)
+      thread_1_mutex = MySQLMutex.new('test', 1, false, con)
       $output += "1-RUN"
-      $output += "-LOCK" if mutex.lock
+      $output += "-LOCK" if thread_1_mutex.lock
     end
+
+    thread_1.join
 
     thread_2 = Thread.new do
       con = ActiveRecord::Base.mysql_connection(ActiveRecord::Base.configurations['test'])
@@ -54,9 +57,33 @@ describe MySQLMutex, 'with a lock on an open mysql connection' do
       $output += "-LOCK" if mutex.lock
     end
 
-    thread_1.join
     thread_2.join
     $output.should == "1-RUN-LOCK-2-RUN"
+    thread_1_mutex.unlock.should == true
+  end
+
+  it 'should not be released by a nested lock on the same connection' do
+    thread_1_mutex = nil
+    thread_2_mutex = nil
+
+    con = ActiveRecord::Base.mysql_connection(ActiveRecord::Base.configurations['test'])
+    thread_1_mutex_1 = MySQLMutex.new('test', 1, false, con)
+
+    thread_1_mutex_1.lock.should == true
+
+    thread_1_mutex_2 = MySQLMutex.new('test', 1, false, con)
+
+    thread_1_mutex_2.lock.should == true
+    thread_1_mutex_2.unlock.should == false
+
+    thread_2 = Thread.new do
+      con = ActiveRecord::Base.mysql_connection(ActiveRecord::Base.configurations['test'])
+      thread_2_mutex = MySQLMutex.new('test', 1, false, con)
+      thread_2_mutex.lock.should == false # Should still be locked.
+    end
+
+    thread_2.join
+    thread_1_mutex_1.unlock.should == true
   end
 
 end

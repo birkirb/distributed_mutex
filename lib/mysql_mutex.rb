@@ -5,7 +5,8 @@ class MySQLMutex < DistributedMutex
 
   def initialize(key, timeout = DEFAULT_TIMEOUT, exception_on_timeout = DEFAULT_EXCEPTION_ON_TIMEOUT, connection = ActiveRecord::Base.connection)
     @connection = connection
-    @get_sql = ActiveRecord::Base.send(:sanitize_sql_array,["SELECT GET_LOCK(?,?)", key, timeout])
+    @lock_was_free = false
+    @get_sql = ActiveRecord::Base.send(:sanitize_sql_array,["SELECT IS_FREE_LOCK(?), GET_LOCK(?,?)", key, key, timeout])
     @release_sql = ActiveRecord::Base.send(:sanitize_sql_array,["SELECT RELEASE_LOCK(?)", key])
     super(key, timeout, exception_on_timeout)
   end
@@ -18,11 +19,17 @@ class MySQLMutex < DistributedMutex
   private
 
   def get_lock
-    '1' == @connection.select_value(@get_sql)
+    is_free_lock, get_lock = @connection.select_rows(@get_sql).first
+    @lock_was_free = ('1' == is_free_lock)
+    '1' == get_lock
   end
 
   def release_lock
-    '1' == @connection.select_value(@release_sql)
+    if @lock_was_free
+      '1' == @connection.select_value(@release_sql)
+    else
+      false
+    end
   end
 
 end

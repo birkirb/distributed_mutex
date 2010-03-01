@@ -38,20 +38,21 @@ class DistributedMutex < Mutex
       ensure
         self.unlock
       end
-        true
+      true
     else
       false
     end
   end
 
   def try_lock
+    was_locked = nil
     begin
       self.lock
       was_locked = locked?
-      was_locked
     ensure
       self.unlock
     end
+    was_locked
   end
 
   def unlock
