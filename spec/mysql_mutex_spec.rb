@@ -74,7 +74,7 @@ describe MySQLMutex, 'with a lock on an open mysql connection' do
     thread_1_mutex_2 = MySQLMutex.new('test', 1, false, con)
 
     thread_1_mutex_2.lock.should == true
-    #thread_1_mutex_2.unlock.should == false
+    thread_1_mutex_2.unlock.should == true
 
     thread_2 = Thread.new do
       con = ActiveRecord::Base.mysql_connection(ActiveRecord::Base.configurations['test'])
