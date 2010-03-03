@@ -11,8 +11,8 @@ class MySQLMutex < DistributedMutex
     super(key, timeout, exception_on_timeout)
   end
 
-  def self.synchronize(key, timeout = DEFAULT_TIMEOUT, con = ActiveRecord::Base.connection, &block)
-    mutex = new(key, timeout, con)
+  def self.synchronize(key, timeout = DEFAULT_TIMEOUT, exception_on_timeout = DEFAULT_TIMEOUT, con = ActiveRecord::Base.connection, &block)
+    mutex = new(key, timeout, exception_on_timeout, con)
     mutex.synchronize(&block)
   end
 
@@ -28,7 +28,7 @@ class MySQLMutex < DistributedMutex
     if @lock_was_free
       '1' == @connection.select_value(@release_sql)
     else
-      false
+      true
     end
   end
 

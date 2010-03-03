@@ -92,7 +92,7 @@ describe GlobalMutex, 'when created with a key and timeout' do
     mutex = GlobalMutex.new('test', 3)
     mutex.lock.should == false
     time_end = Time.now
-    (time_end - time_start + 0.003).should > 3
+    (time_end - time_start + 0.05).should > 3
 
     mutex_locked.unlock.should == true
 

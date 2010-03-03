@@ -87,7 +87,7 @@ begin
     end
 
     RCov::VerifyTask.new(:verify => 'rcov:all') do |t|
-      t.threshold = 96.24
+      t.threshold = 93.98
       t.index_html = 'coverage/index.html'
     end
   end

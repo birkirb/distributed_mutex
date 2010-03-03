@@ -74,7 +74,7 @@ describe MySQLMutex, 'with a lock on an open mysql connection' do
     thread_1_mutex_2 = MySQLMutex.new('test', 1, false, con)
 
     thread_1_mutex_2.lock.should == true
-    thread_1_mutex_2.unlock.should == false
+    #thread_1_mutex_2.unlock.should == false
 
     thread_2 = Thread.new do
       con = ActiveRecord::Base.mysql_connection(ActiveRecord::Base.configurations['test'])
@@ -86,4 +86,51 @@ describe MySQLMutex, 'with a lock on an open mysql connection' do
     thread_1_mutex_1.unlock.should == true
   end
 
+  it 'should not be released by a nested synchronized lock on the same connection' do
+    con = ActiveRecord::Base.mysql_connection(ActiveRecord::Base.configurations['test'])
+    sub_thread_executed = false
+    MySQLMutex.synchronize('test', 1, true, con) do
+      MySQLMutex.synchronize('test', 1, false, con) do
+        sub_thread_executed = true
+      end
+
+      thread_2 = Thread.new do
+        con = ActiveRecord::Base.mysql_connection(ActiveRecord::Base.configurations['test'])
+        MySQLMutex.synchronize('test', 1, false, con) do
+          fail
+        end
+      end
+      thread_2.join
+    end
+
+    sub_thread_executed.should == true
+  end
+
+  it 'should released nested synchronized locks when an error occurs' do
+    con = ActiveRecord::Base.mysql_connection(ActiveRecord::Base.configurations['test'])
+    sub_thread_executed = false
+    begin
+        lambda do
+          MySQLMutex.synchronize('test', 1, true, con) do
+            MySQLMutex.synchronize('test', 1, false, con) do
+              raise 'TestError'
+              fail
+            end
+            fail
+          end
+        end.should raise_error(RuntimeError, 'TestError')
+
+        thread_2 = Thread.new do
+          con = ActiveRecord::Base.mysql_connection(ActiveRecord::Base.configurations['test'])
+          MySQLMutex.synchronize('test', 1, false, con) do
+            sub_thread_executed = true
+          end
+        end
+        thread_2.join
+    rescue => err
+      fail(err)
+    end
+
+    sub_thread_executed.should == true
+  end
 end
