@@ -1,1 +1,1 @@
-require 'mysql_mutex'
+File.dirname(__FILE__) + "/rails/init".
