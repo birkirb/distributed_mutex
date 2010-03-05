@@ -18,6 +18,14 @@ framework.
 
   script/plugin install git://github.com/birkirb/distributed_mutex.git
 
+== Gem Install
+
+  gem install distributed_mutex
+
+To add the plugin to your rails project, add the following to your config/environments.rb:
+
+  config.gem(:distributed_mutex)
+
 == Copyright
 
 Author::    Birkir A. Barkarson <birkirb@stoicviking.net>
