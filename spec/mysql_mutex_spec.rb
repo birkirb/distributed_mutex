@@ -133,4 +133,89 @@ describe MySQLMutex, 'with a lock on an open mysql connection' do
 
     sub_thread_executed.should == true
   end
+
+  it 'should released nested synchronized locks and block a second thread which times out' do
+    sub_thread_executed = false
+    main_thread_completed = false
+    final_thread_completed = false
+
+    begin
+      thread_2 = Thread.new do
+        con = ActiveRecord::Base.mysql_connection(ActiveRecord::Base.configurations['test'])
+        sleep 0.1
+        MySQLMutex.synchronize('test', 1, true, con) do
+          sub_thread_executed = true
+        end
+      end
+
+      thread_1 = Thread.new do
+        con = ActiveRecord::Base.mysql_connection(ActiveRecord::Base.configurations['test'])
+        MySQLMutex.synchronize('test', 1, true, con) do
+          MySQLMutex.synchronize('test', 1, true, con) do
+            sleep 3
+            main_thread_completed = true
+          end
+        end
+      end
+
+      lambda do
+        thread_2.join
+      end.should raise_error(MutexLockTimeout)
+
+      thread_1.join
+
+      con = ActiveRecord::Base.mysql_connection(ActiveRecord::Base.configurations['test'])
+      MySQLMutex.synchronize('test', 1, true, con) do
+        final_thread_completed = true
+      end
+    rescue => err
+      fail(err)
+    end
+
+    sub_thread_executed.should == false
+    main_thread_completed.should == true
+    final_thread_completed.should == true
+  end
+
+  it 'should released nested synchronized locks throwing an error and block a second accessing before the error' do
+    final_thread_completed = false
+
+    begin
+      thread_2 = Thread.new do
+        con = ActiveRecord::Base.mysql_connection(ActiveRecord::Base.configurations['test'])
+        sleep 0.1
+        MySQLMutex.synchronize('test', 1, true, con) do
+          raise 'Boom 2!'
+        end
+      end
+
+      thread_1 = Thread.new do
+        con = ActiveRecord::Base.mysql_connection(ActiveRecord::Base.configurations['test'])
+        MySQLMutex.synchronize('test', 1, true, con) do
+          MySQLMutex.synchronize('test', 1, true, con) do
+            sleep 3
+            raise 'Boom 1!'
+          end
+        end
+      end
+
+      lambda do
+        thread_2.join
+      end.should raise_error(MutexLockTimeout)
+
+      lambda do
+        thread_1.join
+      end.should raise_error(RuntimeError, 'Boom 1!')
+
+      con = ActiveRecord::Base.mysql_connection(ActiveRecord::Base.configurations['test'])
+      MySQLMutex.synchronize('test', 1, true, con) do
+        final_thread_completed = true
+      end
+    rescue => err
+      fail(err)
+    end
+
+    final_thread_completed.should == true
+  end
+
 end
