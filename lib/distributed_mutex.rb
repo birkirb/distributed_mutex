@@ -6,6 +6,8 @@ class DistributedMutex < Mutex
   DEFAULT_TIMEOUT = 1
   DEFAULT_EXCEPTION_ON_TIMEOUT = false
 
+  @@active_locks = Hash.new
+
   attr_reader :key, :timeout, :exception_on_timeout
   alias excluse_unlock unlock
 
@@ -17,7 +19,9 @@ class DistributedMutex < Mutex
   end
 
   def lock
-    if @locked = get_lock
+    @locked = get_lock
+    if true == @locked
+      @@active_locks[@key] = timeout
       true
     else
       if @exception_on_timeout
@@ -59,6 +63,7 @@ class DistributedMutex < Mutex
   def unlock
     if locked?
       if release_lock
+        @@active_locks.delete(@key)
         @locked = false
         true
       else
@@ -74,6 +79,10 @@ class DistributedMutex < Mutex
     mutex.synchronize(&block)
   end
 
+  def self.active_locks
+    @@active_locks
+  end
+
   private
 
   # Return true if and only if a lock is obtained
@@ -86,4 +95,21 @@ class DistributedMutex < Mutex
     raise 'Method not implemented'
   end
 
+end
+
+at_exit do
+  locks = DistributedMutex.active_locks
+  if locks.size > 0
+    if defined?(Rails)
+      Rails.logger.error("MySQLMutex: Locks still active! - #{locks.inspect}")
+    else
+      STDERR.puts("MySQLMutex: Locks still active! - #{locks.inspect}")
+    end
+  else
+    if defined?(Rails)
+      Rails.logger.debug("MySQLMutex: All locks released.")
+    else
+      STDERR.puts("MySQLMutex: All locks released.")
+    end
+  end
 end

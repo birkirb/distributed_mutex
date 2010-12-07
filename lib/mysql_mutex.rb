@@ -3,8 +3,6 @@ require 'distributed_mutex'
 
 class MySQLMutex < DistributedMutex
 
-  @active_locks = Hash.new
-
   def initialize(key, timeout = DEFAULT_TIMEOUT, exception_on_timeout = DEFAULT_EXCEPTION_ON_TIMEOUT, connection = ActiveRecord::Base.connection)
     @connection = connection
     @lock_was_free = false
@@ -13,15 +11,9 @@ class MySQLMutex < DistributedMutex
     super(key, timeout, exception_on_timeout)
   end
 
-  def self.active_locks
-    @active_locks
-  end
-
   def self.synchronize(key, timeout = DEFAULT_TIMEOUT, exception_on_timeout = DEFAULT_TIMEOUT, con = ActiveRecord::Base.connection, &block)
     mutex = new(key, timeout, exception_on_timeout, con)
-    @active_locks[key] = timeout
     mutex.synchronize(&block)
-    @active_locks.delete(key)
   end
 
   private
@@ -42,19 +34,10 @@ class MySQLMutex < DistributedMutex
 
 end
 
-at_exit do
-  locks = MySQLMutex.active_locks
-  if locks.size > 0
-    if defined?(Rails)
-      Rails.logger.error("MySQLMutex: Locks still active! - #{locks.inspect}")
+      '1' == lock_release
     else
-      STDERR.puts("MySQLMutex: Locks still active! - #{locks.inspect}")
-    end
-  else
-    if defined?(Rails)
-      Rails.logger.debug("MySQLMutex: All locks released.")
-    else
-      STDERR.puts("MySQLMutex: All locks released.")
+      true
     end
   end
+
 end
