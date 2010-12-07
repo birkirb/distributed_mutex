@@ -37,6 +37,7 @@ class MySQLMutex < DistributedMutex
         Rails.logger.debug("MySQLMutex: RELEASE_LOCK=#{lock_release}")
       end
 
+      @lock_was_free = false
       '1' == lock_release
     else
       true
