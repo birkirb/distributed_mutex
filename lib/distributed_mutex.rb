@@ -1,4 +1,5 @@
 require 'mutex_lock_timeout'
+require 'mutex_lock_release_failure'
 
 class DistributedMutex < Mutex
 
@@ -56,12 +57,12 @@ class DistributedMutex < Mutex
   end
 
   def unlock
-    if @locked
+    if locked?
       if release_lock
         @locked = false
         true
       else
-        false
+        raise MutexLockReleaseFailure
       end
     else
       false
