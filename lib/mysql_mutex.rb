@@ -20,19 +20,22 @@ class MySQLMutex < DistributedMutex
 
   def get_lock
     is_free_lock, get_lock = @connection.select_rows(@get_sql).first
+
+    if defined?(Rails)
+      Rails.logger.debug("MySQLMutex: IS_FREE_LOCK=#{is_free_lock}, GET_LOCK=#{get_lock}")
+    end
+
     @lock_was_free = ('1' == is_free_lock)
     '1' == get_lock
   end
 
   def release_lock
     if @lock_was_free
-      '1' == @connection.select_value(@release_sql)
-    else
-      true
-    end
-  end
+      lock_release = @connection.select_value(@release_sql)
 
-end
+      if defined?(Rails)
+        Rails.logger.debug("MySQLMutex: RELEASE_LOCK=#{lock_release}")
+      end
 
       '1' == lock_release
     else
