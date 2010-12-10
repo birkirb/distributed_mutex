@@ -3,12 +3,14 @@ require 'distributed_mutex'
 
 class MySQLMutex < DistributedMutex
 
+  @@thread_locks = Hash.new { |h,k| h[k] = Hash.new(0) } # Accounting for nested locks.
+
   def initialize(key, timeout = DEFAULT_TIMEOUT, exception_on_timeout = DEFAULT_EXCEPTION_ON_TIMEOUT, connection = ActiveRecord::Base.connection)
-    @connection = connection
-    @lock_was_free = false
-    @get_sql = ActiveRecord::Base.send(:sanitize_sql_array,["SELECT IS_FREE_LOCK(?), GET_LOCK(?,?)", key, key, timeout])
-    @release_sql = ActiveRecord::Base.send(:sanitize_sql_array,["SELECT RELEASE_LOCK(?)", key])
     super(key, timeout, exception_on_timeout)
+    @connection = connection
+    @connection_id = connection.show_variable('pseudo_thread_id')
+    @get_sql = ActiveRecord::Base.send(:sanitize_sql_array,["SELECT GET_LOCK(?,?)", key, timeout])
+    @release_sql = ActiveRecord::Base.send(:sanitize_sql_array,["SELECT RELEASE_LOCK(?)", key])
   end
 
   def self.synchronize(key, timeout = DEFAULT_TIMEOUT, exception_on_timeout = DEFAULT_TIMEOUT, con = ActiveRecord::Base.connection, &block)
@@ -16,32 +18,89 @@ class MySQLMutex < DistributedMutex
     mutex.synchronize(&block)
   end
 
+  def self.active_locks
+    @@thread_locks
+  end
+
   private
 
   def get_lock
-    is_free_lock, get_lock = @connection.select_rows(@get_sql).first
+    if thread_lock_count > 0
+      increment_thread_lock_count
+      true
+    else
+      get_lock = @connection.select_value(@get_sql)
 
-    if defined?(Rails)
-      Rails.logger.debug("MySQLMutex: IS_FREE_LOCK=#{is_free_lock}, GET_LOCK=#{get_lock}")
+      if defined?(Rails)
+        Rails.logger.debug("MySQLMutex: GET_LOCK=#{get_lock}")
+      end
+
+      if '1' == get_lock
+        increment_thread_lock_count
+        true
+      else
+        false
+      end
     end
-
-    @lock_was_free = ('1' == is_free_lock)
-    '1' == get_lock
   end
 
   def release_lock
-    if @lock_was_free
+    if thread_lock_count > 1
+      decrement_thread_lock_count
+      true
+    elsif thread_lock_count > 0
       lock_release = @connection.select_value(@release_sql)
 
       if defined?(Rails)
         Rails.logger.debug("MySQLMutex: RELEASE_LOCK=#{lock_release}")
       end
 
-      @lock_was_free = false
-      '1' == lock_release
+      if '1' == lock_release
+        decrement_thread_lock_count
+        true
+      else
+        false
+      end
     else
-      true
+      false
     end
   end
 
+  def thread_lock_count
+    @@thread_locks[@connection_id][self.key]
+  end
+
+  def increment_thread_lock_count
+    @@thread_locks[@connection_id][self.key] += 1
+  end
+
+  def decrement_thread_lock_count
+    @@thread_locks[@connection_id][self.key] -= 1
+
+    if 0 == @@thread_locks[@connection_id][self.key]
+      @@thread_locks[@connection_id].delete(self.key)
+    end
+  end
+
+end
+
+at_exit do
+  locks = MySQLMutex.active_locks
+  locks.delete_if do |k, v|
+    v.empty?
+  end
+
+  if locks.size > 0
+    if defined?(Rails)
+      Rails.logger.error("MySQLMutex: Locks still active! - #{locks.inspect}")
+    else
+      STDERR.puts("MySQLMutex: Locks still active! - #{locks.inspect}")
+    end
+  else
+    if defined?(Rails)
+      Rails.logger.debug("MySQLMutex: All locks released.")
+    else
+      STDERR.puts("MySQLMutex: All locks released.")
+    end
+  end
 end
