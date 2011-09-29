@@ -17,13 +17,12 @@ rescue LoadError
 end
 
 begin
-  require 'spec/rake/spectask'
+  require 'rspec/core/rake_task'
 
-  Spec::Rake::SpecTask.new('spec') do |t|
-    t.spec_opts = ["-f specdoc", "-c"]
-    t.spec_files = FileList['spec/*_spec.rb']
+  RSpec::Core::RakeTask.new('spec') do |t|
+    t.rspec_opts = ["-fd", "-c"]
+    t.pattern = 'spec/**/*_spec.rb'
   end
-
 rescue LoadError
   desc 'Spec rake task not available'
   task :spec do
