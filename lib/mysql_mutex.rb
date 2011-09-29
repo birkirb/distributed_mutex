@@ -85,22 +85,30 @@ class MySQLMutex < DistributedMutex
 end
 
 at_exit do
-  locks = MySQLMutex.active_locks
-  locks.delete_if do |k, v|
-    v.empty?
-  end
-
-  if locks.size > 0
-    if defined?(Rails)
-      Rails.logger.error("MySQLMutex: Locks still active! - #{locks.inspect}")
-    else
-      STDERR.puts("MySQLMutex: Locks still active! - #{locks.inspect}")
+  begin
+    locks = MySQLMutex.active_locks
+    locks.delete_if do |k, v|
+      v.empty?
     end
-  else
-    if defined?(Rails)
-      Rails.logger.debug("MySQLMutex: All locks released.")
+
+    if locks.size > 0
+      if defined?(Rails)
+        Rails.logger.error("MySQLMutex: Locks still active! - #{locks.inspect}")
+      else
+        STDERR.puts("MySQLMutex: Locks still active! - #{locks.inspect}")
+      end
     else
-      STDERR.puts("MySQLMutex: All locks released.")
+      if defined?(Rails)
+        Rails.logger.debug("MySQLMutex: All locks released.")
+      else
+        STDERR.puts("MySQLMutex: All locks released.")
+      end
+    end
+  rescue => err
+    if defined?(Rails)
+      Rails.logger.error("MySQLMutex: #{err.message}")
+    else
+      STDERR.puts("MySQLMutex: #{err.message}")
     end
   end
 end
