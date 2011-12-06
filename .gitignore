@@ -1,3 +1,4 @@
 spec/config/database.yml
 pkg
 distributed_mutex.gemspec
+Gemfile.lock

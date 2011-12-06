@@ -1,4 +1,4 @@
-require 'spec/spec_helper'
+require 'spec_helper'
 require 'mysql_mutex'
 
 describe MySQLMutex, 'with a lock on an open mysql connection' do
