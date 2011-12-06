@@ -35,7 +35,7 @@ class MySQLMutex < DistributedMutex
         Rails.logger.debug("MySQLMutex: GET_LOCK=#{get_lock}")
       end
 
-      if '1' == get_lock
+      if '1' == get_lock.to_s
         increment_thread_lock_count
         true
       else
@@ -55,7 +55,7 @@ class MySQLMutex < DistributedMutex
         Rails.logger.debug("MySQLMutex: RELEASE_LOCK=#{lock_release}")
       end
 
-      if '1' == lock_release
+      if '1' == lock_release.to_s
         decrement_thread_lock_count
         true
       else
