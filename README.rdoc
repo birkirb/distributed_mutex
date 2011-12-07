@@ -26,6 +26,15 @@ To add the plugin to your rails project, add the following to your config/enviro
 
   config.gem(:distributed_mutex)
 
+== Developing
+
+Copy spec/config/database.stub to spec/config/database.yml and edit as needed for your mysql
+installation.
+
+  gem install bundler
+  bundle install
+  rake spec
+
 == Copyright
 
 Author::    Birkir A. Barkarson <birkirb@stoicviking.net>
