@@ -12,7 +12,7 @@ class GlobalMutex < DistributedMutex
         if set_global_mutex
           return true
         else
-          sleep(1)
+          Kernel.sleep(1)
         end
       end
     end
