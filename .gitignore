@@ -1,2 +1,4 @@
 spec/config/database.yml
 pkg
+*.gem
+*.gemspec
