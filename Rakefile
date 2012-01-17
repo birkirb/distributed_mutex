@@ -10,7 +10,6 @@ begin
     s.email = %q{birkirb@stoicviking.net}
     s.has_rdoc = true
     s.homepage = %q{http://github.com/birkirb/distributed_mutex}
-  # s.add_dependency(%q<activerecord>, ["> 1.2"])
   end
 rescue LoadError
   puts "Jeweler, or one of its dependencies, is not available. Install it with: sudo gem install technicalpickles-jeweler -s http://gems.github.com"
