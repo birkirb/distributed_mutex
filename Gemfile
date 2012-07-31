@@ -1,6 +1,6 @@
 source :rubygems
 
-gem 'activerecord', '>= 2.3'
+gem 'activerecord', '>= 2.3', '<3.0'
 gem 'mysql'
 
 group :development do
