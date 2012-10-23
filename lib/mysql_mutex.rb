@@ -7,10 +7,12 @@ class MySQLMutex < DistributedMutex
 
   def initialize(key, timeout = DEFAULT_TIMEOUT, exception_on_timeout = DEFAULT_EXCEPTION_ON_TIMEOUT, connection = ActiveRecord::Base.connection)
     super(key, timeout, exception_on_timeout)
-    @connection = connection
-    @connection_id = connection.show_variable('pseudo_thread_id')
-    @get_sql = ActiveRecord::Base.send(:sanitize_sql_array,["SELECT GET_LOCK(?,?)", key, timeout])
-    @release_sql = ActiveRecord::Base.send(:sanitize_sql_array,["SELECT RELEASE_LOCK(?)", key])
+    sanitized_key     = connection.quote(key)
+    sanitized_timeout = connection.quote(timeout)
+    @connection       = connection
+    @connection_id    = connection.show_variable('pseudo_thread_id')
+    @get_sql          = "SELECT GET_LOCK(#{sanitized_key},#{sanitized_timeout})"
+    @release_sql      = "SELECT RELEASE_LOCK(#{sanitized_key})"
   end
 
   def self.synchronize(key, timeout = DEFAULT_TIMEOUT, exception_on_timeout = DEFAULT_TIMEOUT, con = ActiveRecord::Base.connection, &block)
