@@ -8,6 +8,12 @@ A rails plugin proving an abstract distributed mutex along with a MySQL implemen
 mysql named locks. Others distributed locks using Memcached etc could be implemented using the same
 framework.
 
+A few words about the naming. It's a bit confusing, since we're talking about a mutext that works for a distributed application environment, but is in itself centralized. This is a fairly common environment for Ruby on Rails since many application will run many instances all taking to a centralized database. If so then yes, this could be what you need.
+
+Lastly this is by far the only solution to this kind of problem. Generally you should just be using record locks if you are using a database to begin with. However I did find a use for this where I wanted to prevent a user from executing a certain code path that was only designed to work for a single thread. Why users would try doing the same thing in multiple windows is of course beyond the scope of this text, but a centralized mutex could be used to prevent such undesired assholery.
+
+If you don't have MySQL or prefer to store your mutex in a different centralized repo (such as memcache, or MongoDB) then adding such an implementation to this one should be trivial.
+
 == Installation from source
 
   git clone git://github.com/birkirb/distributed_mutex.git
@@ -25,6 +31,8 @@ framework.
 To add the plugin to your rails project, add the following to your config/environments.rb:
 
   config.gem(:distributed_mutex)
+
+or just stick in your bundle.
 
 == Developing
 
